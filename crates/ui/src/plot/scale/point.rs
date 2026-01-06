@@ -1,5 +1,8 @@
 // @reference: https://d3js.org/d3-scale/point
 
+use std::collections::HashMap;
+use std::hash::Hash;
+
 use itertools::Itertools;
 use num_traits::Zero;
 
@@ -7,13 +10,14 @@ use super::Scale;
 
 #[derive(Clone)]
 pub struct ScalePoint<T> {
-    domain: Vec<T>,
+    domain_len: usize,
+    domain_index: HashMap<T, usize>,  // O(1) lookup
     range_tick: f32,
 }
 
 impl<T> ScalePoint<T>
 where
-    T: PartialEq,
+    T: Eq + Hash,
 {
     pub fn new(domain: Vec<T>, range: Vec<f32>) -> Self {
         let len = domain.len();
@@ -33,30 +37,41 @@ where
             }
         };
 
-        Self { domain, range_tick }
+        // Build HashMap for O(1) index lookup
+        let domain_index: HashMap<T, usize> = domain
+            .into_iter()
+            .enumerate()
+            .map(|(i, v)| (v, i))
+            .collect();
+
+        Self {
+            domain_len: len,
+            domain_index,
+            range_tick,
+        }
     }
 }
 
 impl<T> Scale<T> for ScalePoint<T>
 where
-    T: PartialEq,
+    T: Eq + Hash,
 {
     fn tick(&self, value: &T) -> Option<f32> {
-        if self.domain.len() == 1 {
+        if self.domain_len == 1 {
             Some(self.range_tick / 2.)
         } else {
-            let index = self.domain.iter().position(|v| v == value)?;
-            Some(index as f32 * self.range_tick)
+            let index = self.domain_index.get(value)?;
+            Some(*index as f32 * self.range_tick)
         }
     }
 
     fn least_index(&self, tick: f32) -> usize {
-        if self.domain.is_empty() {
+        if self.domain_index.is_empty() {
             return 0;
         }
 
         let index = (tick / self.range_tick).round() as usize;
-        index.min(self.domain.len().saturating_sub(1))
+        index.min(self.domain_len.saturating_sub(1))
     }
 }
 

@@ -1,3 +1,4 @@
+use std::hash::Hash;
 use std::rc::Rc;
 
 use gpui::{px, App, Background, Bounds, Hsla, Pixels, SharedString, TextAlign, Window};
@@ -17,7 +18,7 @@ use crate::{
 pub struct AreaChart<T, X, Y>
 where
     T: 'static,
-    X: Clone + PartialEq + Into<SharedString> + 'static,
+    X: Clone + Eq + Hash + Into<SharedString> + 'static,
     Y: Clone + Copy + PartialOrd + Num + ToPrimitive + Sealed + 'static,
 {
     data: Vec<T>,
@@ -31,7 +32,7 @@ where
 
 impl<T, X, Y> AreaChart<T, X, Y>
 where
-    X: Clone + PartialEq + Into<SharedString> + 'static,
+    X: Clone + Eq + Hash + Into<SharedString> + 'static,
     Y: Clone + Copy + PartialOrd + Num + ToPrimitive + Sealed + 'static,
 {
     pub fn new<I>(data: I) -> Self
@@ -92,7 +93,7 @@ where
 
 impl<T, X, Y> Plot for AreaChart<T, X, Y>
 where
-    X: Clone + PartialEq + Into<SharedString> + 'static,
+    X: Clone + Eq + Hash + Into<SharedString> + 'static,
     Y: Clone + Copy + PartialOrd + Num + ToPrimitive + Sealed + 'static,
 {
     fn paint(&mut self, bounds: Bounds<Pixels>, window: &mut Window, cx: &mut App) {
